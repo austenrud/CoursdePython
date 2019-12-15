@@ -8,8 +8,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-
-
 # %matplotlib inline
 
 
@@ -48,7 +46,7 @@ sns.heatmap(data.isnull())
 plt.show()
 
 # However, perhaps there is some value in continuing to look at the taster name,
-# to uncover any possible biases. Let's fill in the null values with a text string - 'unknown'
+# t o uncover any possible biases. Let's fill in the null values with a text string - 'unknown'
 
 
 """ This is for the taster name change to unknown
@@ -135,10 +133,14 @@ data.loc[data.Price33_50 < 51, 'Price33_50'] = 1
 data.loc[data.Price33_50 < 33, 'Price33_50'] = 0
 data.loc[data.Price33_50 > 51, 'Price33_50'] = 0
 
-data.loc[data.Price51_ > 50, 'Price51_'] = 1
 data.loc[data.Price51_ < 51, 'Price51_'] = 0
+data.loc[data.Price51_ > 50, 'Price51_'] = 1
 
 print(data.head())
+data.drop('taster_twitter_handle', axis=1, inplace=True)
+data.drop('region_2', axis=1, inplace=True)
+data[['price', 'taster_name', 'designation', 'region_1']] = data[
+    ['price', 'taster_name', 'designation', 'region_1']].fillna(method='ffill')
 
 sns.heatmap(data.isnull())
 plt.show()
@@ -148,6 +150,7 @@ sns.set()
 data['price'].replace('', np.nan, inplace=True)
 data.dropna(subset=['price'], inplace=True)
 
+"""
 import statsmodels
 from statsmodels.discrete.discrete_model import Probit
 
@@ -155,23 +158,77 @@ from statsmodels.discrete.discrete_model import Probit
 statsmodels.discrete.discrete_model.Probit(data['points'], data['country', 'price', 'province', 'variety'])
 result_3 = statsmodels.discrete.discrete_model.Probit
 print(result_3.summary())
-
+"""
 
 print("This is the pivot.")
 # https://pbpython.com/pandas-pivot-table-explained.html
 
 
-wine = pd.pivot_table(data, index=['Price4_15', 'Price16_22', 'Price23_32', 'Price33_50', 'Price51_'], values=["price"],
-                      columns=["country"], aggfunc={'price': 'count'}, fill_value=0)
+# wine = pd.pivot_table(data, index=['Price51_', 'Price33_50', 'Price23_32', 'Price16_22', 'Price4_15'], values=["Unnamed: 0"],
+#                      columns=["country"], aggfunc={'Unnamed: 0': 'count'}, fill_value=0)
 
+
+# wine = pd.pivot_table(data, index=['Price51_', 'Price33_50', 'Price23_32', 'Price16_22', 'Price4_15'],
+#                      columns=["country"], aggfunc={'Unnamed: 0': pd.Series.nunique}, fill_value=0)
+# 'Price16_22', 'Price23_32', 'Price33_50', 'Price51_'
+
+
+# https://chrisalbon.com/python/data_wrangling/pandas_dataframe_count_values/
+
+price1 = data['Price4_15']
+# print(price1)
+price2 = data['Price16_22']
+# print(price2)
+price3 = data['Price23_32']
+# print(price3)
+price4 = data['Price33_50']
+# print(price4)
+price5 = data['Price51_']
+# print(price5)
+country1 = data['country']
+print(country1)
+
+# Create a dictionary variable that assigns variable names
+
+variables = dict(price1=price1, price2=price2,
+                 price3=price3, price4=price4, price5=price5)
+
+# Create a dataframe and set the order of the columns using the columns attribute
+
+horsekick = pd.DataFrame(variables, columns=['price1', 'price2', 'price3', 'price4', 'price5'])
+
+# Set the dataframe’s index to be country
+
+# horsekick.index = ['country1']
+
+print(horsekick)
+print("That was horsekick")
+
+print(data.groupby('country')['points'].mean())
+
+plt.style.use('seaborn-whitegrid')
+x = 'country'
+y = 'points'
+dy = 0.8
+plt.errorbar(x, y, yerr=dy, fmt='o', color='black',
+             ecolor='lightgray', elinewidth=3, capsize=0);
+
+print(data["Price4_15"].mean())
+print(data["Price16_22"].mean())
+print(data["Price23_32"].mean())
+print(data["Price33_50"].mean())
+print(data["Price51_"].mean())
+
+# wine = data.pivot_table(index=variables, columns='country',
+#                       values='points', aggfunc=len, fill_value=0)
 # pd.Series.nunique
-print(wine.columns)
+# print(wine.columns)
 
-print(wine)
+# print(wine)
 
-f, ax = plt.subplots(figsize=(18, 12))
-sns.heatmap(wine, annot=True, fmt="d", linewidths=.5, ax=ax, cbar=False, cmap="YlGnBu")
-plt.show()
+# f, ax = plt.subplots(figsize=(6, 9))
+# sns.heatmap(horsekick, annot=True, fmt="1", linewidths=.5, ax=ax, cbar=False, cmap="YlGnBu")
+# plt.show()
 
 # Load the example flights dataset and conver to long-form
 # wine = data.pivot(index='country', columns=['Price4_15', 'Price16_22', 'Price23_32', 'Price33_50', 'Price51'],
@@ -184,8 +241,63 @@ plt.show()
 sns.heatmap(data.isnull())
 plt.show()
 
-#print(data['price'].describe())
+# print(data['price'].describe())
 
 
+# Do supervised learning for some pieces
+# Use unsupervised learning to determine the unpopulated fields that could be predicted
+
+# Populate blank ratings with predicted values
+# K- means Algorithm
+
+# We could do clustering with 4-5 different clusters to find large types of wine
 
 
+df = pd.DataFrame(
+    {'x': range(75, 95), 'Price4_15': np.random.randn(10), 'Price16_22': np.random.randn(10) + range(1, 11),
+     'Price23_32':
+         np.random.randn(10) + range(11, 21), 'Price33_50': np.random.randn(10) + range(6, 16),
+     'Price51_': np.random.randn(10) + range(4, 14)})
+
+# Small multiples for line chart: https://python-graph-gallery.com/125-small-multiples-for-line-chart/
+# Initialize the figure
+plt.style.use('seaborn-darkgrid')
+
+# create a color palette
+palette = plt.get_cmap('Set1')
+
+# multiple line plot
+num = 0
+for points in data.drop('price', axis=1):
+    num += 1
+
+    # Find the right spot on the plot
+    plt.subplot(3, 3, num)
+
+    # plot every groups, but discreet
+    for country in data.drop('price', axis=1):
+        plt.plot(data['country'], data[country], marker='', color='grey', linewidth=0.6, alpha=0.3)
+
+    # Plot the lineplot
+    plt.plot(data['price'], data[points], marker='', color=palette(num), linewidth=2.4, alpha=0.9, label=points)
+
+    # Same limits for everybody!
+    plt.xlim(0, 100)
+    plt.ylim(75, 95)
+
+    # Not ticks everywhere
+    if num in range(7):
+        plt.tick_params(labelbottom='off')
+    if num not in [1, 4, 7]:
+        plt.tick_params(labelleft='off')
+
+    # Add title
+    plt.title(points, loc='left', fontsize=12, fontweight=0, color=palette(num))
+
+# general title
+plt.suptitle("How wines from each country\ndo by price?", fontsize=13, fontweight=0, color='black',
+             style='italic', y=1.02)
+
+# Axis title
+plt.text(0.5, 0.02, 'Time', ha='center', va='center')
+plt.text(0.06, 0.5, 'Note', ha='center', va='center', rotation='vertical')
